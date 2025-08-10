@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: Object Data Exchange API
+  version: 1.0.0
+  description: API для запроса объектов по идентификаторам из Системы 2
+
+servers:
+  - url: https://api.system2.example.com/v1
+    description: Продакшн-сервер
+
+paths:
+  /objects:
+    post:
+      summary: Получение объектов по ID
+      operationId: getObjectsById
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  description: Список идентификаторов объектов
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    type: string
+                    format: uuid
+              required:
+                - ids
+      responses:
+        '200':
+          description: Успешный ответ с объектами
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ObjectData'
+        '401':
+          description: Не авторизован (неверный или отсутствует токен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Нет доступа (токен не имеет нужных прав)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Сервер недоступен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ObjectData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        created:
+          type: string
+          format: date
+        activation:
+          type: boolean
+        number:
+          type: integer
+        elems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ElemData'
+      required:
+        - id
+        - name
+        - created
+        - activation
+        - number
+        - elems
+
+    ElemData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        count:
+          type: integer
+      required:
+        - id
+        - name
+        - count
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Короткий код ошибки
+          example: unauthorized
+        message:
+          type: string
+          description: Описание ошибки
+          example: Missing or invalid bearer token

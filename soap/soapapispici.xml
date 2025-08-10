@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="DataRequestService"
+             targetNamespace="http://api.service.ru/namespace/data"
+             xmlns:tns="http://api.service.ru/namespace/data"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+             xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+  <types>
+    <xsd:schema targetNamespace="http://api.service.ru/namespace/data"
+                	  elementFormDefault="qualified">
+      
+      <!-- Глобальные элементы -->
+      <xsd:element name="DataRequest" type="tns:DataRequestType"/>
+      <xsd:element name="DataResponse" type="tns:DataResponseType"/>
+      <xsd:element name="UnauthorizedFault" type="xsd:string"/>
+      <xsd:element name="ForbiddenFault" type="xsd:string"/>
+      <xsd:element name="ServiceUnavailableFault" type="xsd:string"/>
+      
+      <!-- Типы -->
+      <xsd:complexType name="ElemType">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:string"/>
+          <xsd:element name="type" type="xsd:string"/>
+          <xsd:element name="name" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="ElemListType">
+        <xsd:sequence>
+          <xsd:element name="elem" type="tns:ElemType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="DataResponseType">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:string"/>
+          <xsd:element name="name" type="xsd:string"/>
+          <xsd:element name="level" type="xsd:int"/>
+          <xsd:element name="created" type="xsd:dateTime"/>
+          <xsd:element name="status" type="xsd:boolean"/>
+          <xsd:element name="elems" type="tns:ElemListType" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:complexType name="DataRequestType">
+        <xsd:sequence>
+          <xsd:element name="requestId" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+    </xsd:schema>
+  </types>
+
+  <!-- Messages -->
+  <message name="DataRequest">
+    <part name="parameters" element="tns:DataRequest"/>
+  </message>
+  <message name="DataResponse">
+    <part name="parameters" element="tns:DataResponse"/>
+  </message>
+
+  <message name="UnauthorizedFault">
+    <part name="fault" element="tns:UnauthorizedFault"/>
+  </message>
+  <message name="ForbiddenFault">
+    <part name="fault" element="tns:ForbiddenFault"/>
+  </message>
+  <message name="ServiceUnavailableFault">
+    <part name="fault" element="tns:ServiceUnavailableFault"/>
+  </message>
+
+  <!-- Заголовок WS-Security -->
+  <message name="Security">
+    <part name="Security" element="wsse:Security"/>
+  </message>
+
+  <!-- Порт -->
+  <portType name="DataPortType">
+    <operation name="GetData">
+      <input message="tns:DataRequest"/>
+      <output message="tns:DataResponse"/>
+      <fault name="UnauthorizedFault" message="tns:UnauthorizedFault"/>
+      <fault name="ForbiddenFault" message="tns:ForbiddenFault"/>
+      <fault name="ServiceUnavailableFault" message="tns:ServiceUnavailableFault"/>
+    </operation>
+  </portType>
+
+  <!-- Binding -->
+  <binding name="DataBinding" type="tns:DataPortType">
+    <soap:binding style="document"
+                  transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="GetData">
+      <soap:operation soapAction="http://api.service.ru/namespace/data/GetData"/>
+      <input>
+        <soap:body use="literal"/>
+        <soap:header message="tns:Security" part="Security" use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+      <fault name="UnauthorizedFault">
+        <soap:fault name="UnauthorizedFault" use="literal"/>
+      </fault>
+      <fault name="ForbiddenFault">
+<soap:fault name="ForbiddenFault" use="literal"/>
+      </fault>
+      <fault name="ServiceUnavailableFault">
+        <soap:fault name="ServiceUnavailableFault" use="literal"/>
+      </fault>
+    </operation>
+  </binding>
+
+  <!-- Service -->
+  <service name="DataService">
+    <port name="DataPort" binding="tns:DataBinding">
+      <soap:address location="https://api.location.ru/services/data"/>
+    </port>
+  </service>
+
+</definitions>

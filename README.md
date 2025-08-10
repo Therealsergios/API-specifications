@@ -1,1 +1,7 @@
-# API-specifications
+# API спецификации
+
+### REST API
+- [Спецификация]()
+
+### SOAP API
+- [Спецификация]()
