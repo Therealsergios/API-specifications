@@ -1,7 +1,7 @@
 # API спецификации
 
 ### REST API
-- [Спецификация]()
+- [Спецификация](https://github.com/Therealsergios/API-specifications/blob/main/rest/restapispec.yaml)
 
 ### SOAP API
-- [Спецификация]()
+- [Спецификация](https://github.com/Therealsergios/API-specifications/blob/main/soap/soapapispici.xml)

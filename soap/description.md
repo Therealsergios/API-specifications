@@ -16,4 +16,4 @@
 - «status» - boolean
 - «elems» - («id» - uuid, «type» - string, «name» - string)
 
-[Scheme]()
+[Scheme](https://github.com/Therealsergios/API-specifications/blob/main/soap/soapapispici.xml)

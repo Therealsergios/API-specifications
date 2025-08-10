@@ -19,4 +19,4 @@ parameters объектов
 - number – int
 - elems – array {id – uuid, name – string, count – int}
 
-[Scheme]()
+[Scheme](https://github.com/Therealsergios/API-specifications/blob/main/rest/restapispec.yaml)
