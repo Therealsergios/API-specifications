@@ -1,0 +1,333 @@
+openapi: 3.0.3
+info:
+  title: Auth & Sessions API
+  version: "1.0.0"
+  description: >
+    Базовые операции аутентификации по телефону (SMS), управление сессиями и получение профиля.
+servers:
+  - url: https://api.example.com/v1
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Phone:
+      type: string
+      example: "+79991234567"
+      description: Телефон в формате E.164
+    SMSCode:
+      type: string
+      example: "123456"
+      description: 4–8 цифр
+    RegistrationStartResponse:
+      type: object
+      properties:
+        registrationId:
+          type: string
+          example: "reg_01J8Z4C8YQ3S3T2V1"
+        expiresIn:
+          type: integer
+          example: 300
+          description: Сколько секунд действителен код
+      required: [registrationId, expiresIn]
+    TokenPair:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          example: 3600
+      required: [accessToken, refreshToken, tokenType, expiresIn]
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "sess_01J8Z57DRA5M7H6C9"
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        ip:
+          type: string
+          example: "203.0.113.10"
+        userAgent:
+          type: string
+          example: "iOS/17.5; App/1.2.3"
+        current:
+          type: boolean
+          example: true
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "usr_01H9K3PZ9Z"
+        phone:
+          $ref: '#/components/schemas/Phone'
+        name:
+          type: string
+          example: "Иван Петров"
+        createdAt:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "invalid_request"
+        message:
+          type: string
+          example: "Некорректный код подтверждения"
+
+paths:
+  /auth/register/phone:
+    post:
+      summary: Регистрация по номеру телефона (отправка SMS-кода)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  $ref: '#/components/schemas/Phone'
+                password:
+                  type: string
+                  minLength: 8
+                  example: "Qwerty!234"
+                name:
+                  type: string
+                  example: "Иван Петров"
+                referralCode:
+                  type: string
+                  example: "REF2025"
+              required: [phone, password]
+      responses:
+        '201':
+          description: Код отправлен на телефон
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationStartResponse'
+        '409':
+          description: Пользователь с таким телефоном уже существует
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/verify-sms:
+    post:
+      summary: Подтверждение кода из SMS (завершение регистрации)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                registrationId:
+                  type: string
+                  example: "reg_01J8Z4C8YQ3S3T2V1"
+                code:
+                  $ref: '#/components/schemas/SMSCode'
+                device:
+                  type: object
+                  properties:
+                    userAgent: { type: string, example: "iOS/17.5; App/1.2.3" }
+                    ip: { type: string, example: "203.0.113.10" }
+              required: [registrationId, code]
+      responses:
+        '201':
+          description: Регистрация подтверждена — выданы токены и создана сессия
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens: { $ref: '#/components/schemas/TokenPair' }
+                  user: { $ref: '#/components/schemas/User' }
+                  session: { $ref: '#/components/schemas/Session' }
+        '400':
+          description: Истёк срок действия кода или неверный регистрационный идентификатор
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Неверный код
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/login:
+    post:
+      summary: Вход в систему по телефону и паролю
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { $ref: '#/components/schemas/Phone' }
+                password:
+                  type: string
+                  example: "Qwerty!234"
+                device:
+                  type: object
+                  properties:
+                    userAgent: { type: string }
+                    ip: { type: string }
+              required: [phone, password]
+      responses:
+        '200':
+          description: Успешный вход — выданы токены и создана сессия
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens: { $ref: '#/components/schemas/TokenPair' }
+                  user: { $ref: '#/components/schemas/User' }
+                  session: { $ref: '#/components/schemas/Session' }
+        '401':
+          description: Неверный телефон или пароль
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/logout:
+    post:
+      summary: Выход из системы (завершение текущей или всех сессий)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                allDevices:
+                  type: boolean
+                  default: false
+                refreshToken:
+                  type: string
+                  description: Необязательно, для явной инвалидации refresh-токена
+      responses:
+        '204':
+          description: Выход выполнен (контент отсутствует)
+        '401':
+          description: Неавторизован
+
+  /auth/token/refresh:
+    post:
+      summary: Обновление токена по refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required: [refreshToken]
+      responses:
+        '200':
+          description: Выданы новые токены
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPair' }
+        '401':
+          description: Просроченный или отозванный refresh токен
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/sessions:
+    get:
+      summary: Получить список активных сессий пользователя
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Массив сессий (текущая помечена `current=true`)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Session' }
+        '401':
+          description: Неавторизован
+
+  /auth/sessions/{sessionId}:
+    delete:
+      summary: Завершить (выйти из) выбранную сессию
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: Идентификатор сессии
+          schema:
+            type: string
+      responses:
+        '204': { description: Сессия завершена }
+        '404': { description: Сессия не найдена или не принадлежит пользователю }
+        '401': { description: Неавторизован }
+
+  /auth/sessions/terminate-all:
+    post:
+      summary: Завершить все сессии, кроме текущей (опционально — включая текущую)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                includeCurrent:
+                  type: boolean
+                  default: false
+      responses:
+        '204':
+          description: Сессии завершены
+        '401':
+          description: Неавторизован
+
+  /users/me:
+    get:
+      summary: Получение профиля текущего пользователя
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Профиль пользователя
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401':
+          description: Неавторизован
