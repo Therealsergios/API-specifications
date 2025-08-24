@@ -1,7 +1,8 @@
 # API спецификации
 
 ### REST API
-- [Спецификация](https://github.com/Therealsergios/API-specifications/blob/main/rest/restapispec.yaml)
+- [Синхронизация атрибутов объектов](https://github.com/Therealsergios/API-specifications/blob/main/rest/restapispec.yaml)
+- [Авторизация и аутентификация](https://github.com/Therealsergios/API-specifications/blob/main/rest/auth.yaml)
 
 ### SOAP API
-- [Спецификация](https://github.com/Therealsergios/API-specifications/blob/main/soap/soapapispici.xml)
+- [Передача данных из одной системы в другую](https://github.com/Therealsergios/API-specifications/blob/main/soap/soapapispici.xml)

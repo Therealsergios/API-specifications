@@ -36,4 +36,4 @@ parameters объектов
 - 401 Неавторизован
 - 404 Не найден
 
-[Scheme]()
+[Scheme](https://github.com/Therealsergios/API-specifications/blob/main/rest/auth.yaml)
